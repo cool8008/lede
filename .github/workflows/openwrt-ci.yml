@@ -52,29 +52,6 @@ jobs:
           cd lede
           pwd
 
-      - name: Clone feeds script from cool8008/lede
-        run: |
-          cd lede
-          mkdir -p scripts
-          git clone --depth=1 --single-branch --branch master https://github.com/cool8008/lede.git temp_lede
-          cp temp_lede/scripts/feeds scripts/
-          rm -rf temp_lede
-
-      - name: Clone metadata.pm from cool8008/lede
-        run: |
-          cd lede
-          mkdir -p scripts
-          git clone --depth=1 --single-branch --branch master https://github.com/cool8008/lede.git temp_lede
-          cp temp_lede/scripts/metadata.pm scripts/
-          rm -rf temp_lede
-
-      - name: Check file permissions
-        run: |
-          cd lede
-          pwd
-          ls -l scripts/feeds
-          ls -l scripts/metadata.pm
-
       - name: Install required Perl modules
         run: |
           cd lede
@@ -84,11 +61,6 @@ jobs:
         run: |
           cd lede
           echo "src-git kiddin9_kwrt https://github.com/cool8008/Kwrt.git;main" >> feeds.conf.default
-
-      - name: Check network connectivity
-        run: |
-          cd lede
-          ping -c 3 github.com
 
       - name: Check feeds directory permissions
         run: |
