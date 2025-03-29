@@ -83,7 +83,25 @@ jobs:
       - name: Add Kwrt feed
         run: |
           cd lede
-          echo "src-git kiddin9_kwrt https://github.com/kiddin9/Kwrt.git;main" >> feeds.conf.default
+          echo "src-git kiddin9_kwrt https://github.com/cool8008/Kwrt.git;main" >> feeds.conf.default
+
+      - name: Check network connectivity
+        run: |
+          cd lede
+          ping -c 3 github.com
+
+      - name: Check feeds directory permissions
+        run: |
+          cd lede
+          mkdir -p feeds
+          sudo chmod -R 777 feeds
+
+      - name: Manually clone Kwrt feed
+        run: |
+          cd lede
+          if [ ! -d "feeds/kiddin9_kwrt" ]; then
+            git clone --depth=1 --single-branch --branch main https://github.com/cool8008/Kwrt.git feeds/kiddin9_kwrt
+          fi
 
       - name: Update feeds
         run: |
