@@ -106,7 +106,9 @@ jobs:
           wget -N https://github.com/immortalwrt/immortalwrt/raw/refs/heads/openwrt-24.10/package/firmware/wireless-regdb/patches/600-custom-change-txpower-and-dfs.patch -P package/firmware/wireless-regdb/patches/
           wget -N https://github.com/immortalwrt/immortalwrt/raw/refs/heads/master/config/Config-kernel.in -P config/
           rm -rf package/libs/openssl package/network/services/ppp
-          git clone -b openwrt-24.10 https://github.com/immortalwrt/immortalwrt package/libs/openssl package/network/services/ppp
+          # 修改后的 git clone 命令
+          git clone -b openwrt-24.10 https://github.com/immortalwrt/immortalwrt/package/libs/openssl package/libs/openssl
+          git clone -b openwrt-24.10 https://github.com/immortalwrt/immortalwrt/package/network/services/ppp package/network/services/ppp
           echo "$(date +"%s")" >version.date
           sed -i '/$(curdir)\/compile:/c\$(curdir)/compile: package/opkg/host/compile' package/Makefile
           sed -i "s/DEFAULT_PACKAGES:=/DEFAULT_PACKAGES:=luci-app-advancedplus luci-app-firewall luci-app-package-manager luci-app-upnp luci-app-syscontrol luci-proto-wireguard \
