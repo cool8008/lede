@@ -145,30 +145,3 @@ jobs:
         with:
           name: LEDE-Kwrt_firmware
           path: lede/bin/targets/
-
-      - name: Create Release
-        id: create_release
-        uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v$(date +%Y%m%d)
-          name: LEDE-Kwrt Firmware Release $(date +%Y%m%d)
-          body: |
-            This is a release of the LEDE-Kwrt firmware.
-            It includes the following files:
-            - Firmware files: lede/bin/targets/
-            - Package files: lede/artifact/package/
-            - Buildinfo files: lede/artifact/buildinfo/
-          draft: false
-          prerelease: false
-
-      - name: Upload Release Assets
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: lede/bin/targets/
-          asset_name: LEDE-Kwrt_firmware_$(date +%Y%m%d).tar.gz
-          asset_content_type: application/gzip    
