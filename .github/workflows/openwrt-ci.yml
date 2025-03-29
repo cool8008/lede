@@ -8,8 +8,7 @@
 name: OpenWrt-CI
 
 on:
-  schedule:
-    - cron: 0 20 * * *
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -38,24 +37,77 @@ jobs:
           sudo -E apt -y autoremove --purge
           sudo -E apt clean
           sudo -E timedatectl set-timezone "Asia/Shanghai"
-
-      - name: Checkout OpenWrt
+      - name: Clone LEDE repository
+        run: |
+          rm -rf lede
+          git clone https://github.com/cool8008/lede.git
+          cd lede
+      - name: Checkout LEDE
         uses: actions/checkout@v4
+        with:
+          path: lede
+
+      - name: Print current working directory
+        run: |
+          cd lede
+          pwd
+
+      - name: Clone feeds script from cool8008/lede
+        run: |
+          cd lede
+          mkdir -p scripts
+          git clone --depth=1 --single-branch --branch master https://github.com/cool8008/lede.git temp_lede
+          cp temp_lede/scripts/feeds scripts/
+          rm -rf temp_lede
+
+      - name: Clone metadata.pm from cool8008/lede
+        run: |
+          cd lede
+          mkdir -p scripts
+          git clone --depth=1 --single-branch --branch master https://github.com/cool8008/lede.git temp_lede
+          cp temp_lede/scripts/metadata.pm scripts/
+          rm -rf temp_lede
+
+      - name: Check file permissions
+        run: |
+          cd lede
+          pwd
+          ls -l scripts/feeds
+          ls -l scripts/metadata.pm
+
+      - name: Install required Perl modules
+        run: |
+          cd lede
+          sudo apt-get update
+          sudo apt-get install -y libxml-parser-perl libarchive-zip-perl libdata-dump-perl liburi-perl libwww-perl
+      - name: Add Kwrt feed
+        run: |
+          cd lede
+          echo "src-git kiddin9_kwrt https://github.com/kiddin9/Kwrt.git;main" >> feeds.conf.default
 
       - name: Update feeds
         run: |
-          sed -i 's/#src-git helloworld/src-git helloworld/g' ./feeds.conf.default
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
-
+          cd lede
+          if [ ! -f "./scripts/feeds" ]; then
+            echo "Error: ./scripts/feeds file not found."
+            exit 1
+          fi
+          chmod +x ./scripts/feeds
+          PERL5LIB="$PWD/scripts:$PERL5LIB" ./scripts/feeds update -a
+          PERL5LIB="$PWD/scripts:$PERL5LIB" ./scripts/feeds install -a
       - name: Generate configuration file
-        run: make defconfig
+        run: |
+          cd lede
+          make defconfig
 
       - name: Download packages
-        run: make download -j16
+        run: |
+          cd lede
+          make download -j16
 
       - name: Compile firmware
         run: |
+          cd lede
           make -j$(nproc) || make -j1 V=s
           echo "======================="
           echo "Space usage:"
@@ -65,29 +117,28 @@ jobs:
           du -h --max-depth=1 ./ --exclude=build_dir --exclude=bin
           du -h --max-depth=1 ./build_dir
           du -h --max-depth=1 ./bin
-
       - name: Prepare artifact
         run: |
+          cd lede
           mkdir -p ./artifact/package
           mkdir -p ./artifact/buildinfo
           rm -rf $(find ./bin/targets/ -type d -name "packages")
           cp -rf $(find ./bin/packages/ -type f -name "*.ipk") ./artifact/package/
           cp -rf $(find ./bin/targets/ -type f -name "*.buildinfo" -o -name "*.manifest") ./artifact/buildinfo/
-
       - name: Upload buildinfo
         uses: actions/upload-artifact@v4
         with:
           name: OpenWrt_buildinfo
-          path: ./artifact/buildinfo/
+          path: lede/artifact/buildinfo/
 
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
           name: OpenWrt_package
-          path: ./artifact/package/
+          path: lede/artifact/package/
 
       - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:
           name: OpenWrt_firmware
-          path: ./bin/targets/
+          path: lede/bin/targets/    
