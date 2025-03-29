@@ -87,6 +87,7 @@ jobs:
       - name: Apply Common Configurations
         run: |
           cd lede
+          chmod +x ./apply-configurations.sh
           ./apply-configurations.sh
 
       - name: Generate Configuration File
@@ -98,11 +99,17 @@ jobs:
         run: |
           cd lede
           make download -j16
+          # 清理下载的包缓存
+          rm -rf dl
 
       - name: Compile Firmware
         run: |
           cd lede
-          make -j2 || make -j1 V=s
+          make -j1 || make -j1 V=s
+          # 清理编译中间文件
+          find build_dir -type f -mmin +15 -delete
+          find . -type f -name "*.o" -delete
+          find . -type f -name "*.a" -delete
           echo "======================="
           echo "Space usage:"
           echo "======================="
@@ -138,4 +145,30 @@ jobs:
         with:
           name: LEDE-Kwrt_firmware
           path: lede/bin/targets/
-      
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v$(date +%Y%m%d)
+          name: LEDE-Kwrt Firmware Release $(date +%Y%m%d)
+          body: |
+            This is a release of the LEDE-Kwrt firmware.
+            It includes the following files:
+            - Firmware files: lede/bin/targets/
+            - Package files: lede/artifact/package/
+            - Buildinfo files: lede/artifact/buildinfo/
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: lede/bin/targets/
+          asset_name: LEDE-Kwrt_firmware_$(date +%Y%m%d).tar.gz
+          asset_content_type: application/gzip    
